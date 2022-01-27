@@ -15,6 +15,8 @@
   </a>
 </p>
 
+TESTING TESTING
+
 This example shows how to take a picture and display it.
 
 ## 🚀 How to use
