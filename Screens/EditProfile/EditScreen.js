@@ -1,6 +1,6 @@
 import React, { useState } from "react";
-import { auth, db } from "../../firebase_config";
-import { getAuth, sendSignInLinkToEmail, signOut, updateEmail, updatePassword, updateUserWithEmailAndPassword } from "firebase/auth";
+import { auth, db, firebase } from "../../firebase_config";
+import { sendSignInLinkToEmail, signOut, updateEmail, updatePassword, reauthenticateWithCredential} from "firebase/auth";
 import { collection, updateDoc, doc, where, onSnapshot } from "firebase/firestore";
 import {
   View,
@@ -11,58 +11,65 @@ import {
   Platform,
   Image,
   TextInput,
+  Alert,
 } from "react-native";
 import { FontAwesome, Feather, Icons } from "react-native-vector-icons";
 import { useTheme } from "react-native-paper";
+import { onChange } from "react-native-reanimated";
 
-const EditProfileScreen = ({navigation, route}) => {
-  const { colors } = useTheme();
+export default class EditScreen extends React.Component {
 
-  //route brings in current username and email as placeholders
-  console.log(route.params)
+  constructor(props) {
+    super(props);
+    this.state = {
+      //currentPassword: "",
+      newPassword: "",
+      newEmail: "",
+    }
+    user = auth.currentUser.email
+    console.log(user)
+  }
 
-  //to get currentUser's email and password
+  reauthenticate = (currentPassword) => {
+    const credential = auth.EmailAuthProvider.credential(this.auth.currentUser.email, currentPassword);
+    console.log(credential)
+    reauthenticateWithCredential(auth.currentUser, cred)
+    .then(()=>{
+      console.log("reauthentication done")
+    }) .catch((error) => {
+      console.log(error)
+    })
+  }
 
-  // const [email, setEmail] = useState("LoggedInEmail");
-  // const [username, setUsername] = useState("");
-  // const [password, setPassword] = useState("");
+  handleEmail = () => {
+    this.reauthenticate(this.state.currentPassword)
+    .then(() => {
+      updateEmail(auth.currentUser, newEmail).then(()=> {
+        Alert.alert("Email updated: Logout and Login!");
+      }) .catch(error => alert(error.message))
+    }) .catch(error => alert(error.message))
+  }
 
-  // const handleUpdate = () => {
-  //   const user = auth.currentUser;
-  //   updateEmail(user, setEmail)
-  //     .then(() => {
-  //       console.log("Email updated")
-  //   })
-  // };
+  handlePassword = () => {
+    this.reauthenticate(this.state.currentPassword)
+    .then(() => {
+      updatePassword(auth.currentUser, newPassword)
+        .then(() => {
+          Alert.alert("Password updated: Logout and Login!");
+      })
+      .catch(error => alert(error.message))
+    })
+    .catch(error => alert(error.message))
+  }
 
-    // updateEmail(user, "")
-    // .then(()=> {
-    //   console.log("email updated")
-    // }).catch((error) => {
-    //   console.log(error)
-    // })
-
-//     updateProfile(auth.currentUser, {
-//       Username: "route.params.LoggedInUsername",
-//       Email: "route.params.LoggedInEmail",
-//       //photoURL: "https://example.com/jane-q-user/profile.jpg"
-//     }).then(() => {
-//       // userCredentials.user.updateEmail(route.params.LoggedInEmail)
-//     })
-//     .catch(error)
-//   } catch (error) {
-//     console.log(error)
-//   }
-// };
-
-  const handleLogOut = () => {
-    const auth = getAuth();
+  handleLogOut = () => {
     signOut(auth)
     .then(()=> {navigation.replace("Login")
   })
   .catch(error => alert(error.message))
   }
 
+  render() {
   return (
     <View styles={styles.container}>
       <View style={{ margin: 20 }}>
@@ -85,12 +92,11 @@ const EditProfileScreen = ({navigation, route}) => {
             </View>
           </TouchableOpacity>
           <Text style={{ marginTop: 10, fontSize: 18, fontWeight: "bold" }}>
-            {route.params.LoggedInUsername}
           </Text>
         </View>
 
         <View style={styles.action}>
-          <FontAwesome name="user-o" color={colors.text} size={20} />
+          <FontAwesome name="user-o" size={20} />
           <TextInput
             placeholder="Max 8 characters"
             placeholderTextColor="black"
@@ -98,25 +104,27 @@ const EditProfileScreen = ({navigation, route}) => {
             style={
               (styles.textInput,
               {
-                color: colors.text,
+
                 marginLeft: 5,
               })
             }
-          value={route.params.LoggedInUsername}
-          onChangeText={text => setUsername(text)}
+          //value
+          //onChangeText={text => setUsername(text)}
           autoCapitalize="none"
           keyboardType="default"
           textContentType="username"
           autoFocus={true}
           maxLength={8}
           />
-
+          <TouchableOpacity style={styles.commandBtn} >
+          <Text style={styles.panelBtnTitle}>Update Username</Text>
+        </TouchableOpacity>
         </View>
         <Text>
             Username
           </Text>
         <View style={styles.action}>
-          <FontAwesome name="envelope-o" color={colors.text} size={20} />
+          <FontAwesome name="envelope-o" size={20} />
           <TextInput
             placeholder=""
             placeholderTextColor="black"
@@ -126,51 +134,59 @@ const EditProfileScreen = ({navigation, route}) => {
             style={
               (styles.textInput,
               {
-                color: colors.text,
                 marginLeft: 5,
               })
             }
-            onChangeText={(text) => setEmail(text)}
+            value={this.state.newEmail}
+            onChangeText={(text) => { this.setState({newEmail: text}) }}
           />
+          <TouchableOpacity style={styles.commandBtn} onPress={this.handleEmail}>
+          <Text style={styles.panelBtnTitle}>Update Email</Text>
+        </TouchableOpacity>
         </View>
         <Text>
             Email
           </Text>
         <View style={styles.action}>
-          <Feather name="lock" color={colors.text} size={20} />
+          <Feather name="lock" size={20} />
           <TextInput
-            placeholder="Password: Min 6 characters"
-            autoCapitalize="none"
-            placeholderTextColor="black"
-            autoCorrect={false}
+            placeholder="Current Password" placeholderTextColor="black" autoCapitalize="none" autoCorrect={false} secureTextEntry={true}
             style={
               (styles.textInput,
               {
-                color: colors.text,
                 marginLeft: 5,
               })
             }
-            onChangeText={(text) => setPassword(text)}
-            secureTextEntry={true}
-            textContentType="password"
+            value={this.state.currentPassword}
+            onChangeText={(text) => {this.setState({currentPassword: text})}}
           />
+          <TextInput
+            placeholder="New Password: Min 6 characters" placeholderTextColor="black" autoCapitalize="none" autoCorrect={false} secureTextEntry={true}
+            style={
+              (styles.textInput,
+              {
+
+                marginLeft: 5,
+              })
+            }
+            value= {this.state.newPassword}
+            onChangeText={(text) => {this.setState({newPassword: text})}}
+          />
+          <TouchableOpacity style={styles.commandBtn} onPress={this.handlePassword} >
+          <Text style={styles.panelBtnTitle}>Update Password</Text>
+        </TouchableOpacity>
         </View>
         <Text>
             Password
           </Text>
-          {/* onPress={handleUpdate} */}
-        <TouchableOpacity style={styles.commandBtn} >
-          <Text style={styles.panelBtnTitle}>Update</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.commandBtn} onPress={handleLogOut}>
+        <TouchableOpacity style={styles.commandBtn} onPress={this.handleLogOut}>
           <Text style={styles.panelBtnTitle}>Log Out</Text>
         </TouchableOpacity>
       </View>
     </View>
   );
+}
 };
-
-export default EditProfileScreen;
 
 const styles = StyleSheet.create({
   container: {

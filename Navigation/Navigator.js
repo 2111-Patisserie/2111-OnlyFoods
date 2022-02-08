@@ -169,7 +169,7 @@ const Navigator = () => {
         }}
       /> */}
       {/* will have to connect to settings icon when clicked in the profileScreen from navigation */}
-      <Tab.Screen
+      {/* <Tab.Screen
         name="Setting"
         component={EditProfileScreen}
         options={{
@@ -181,7 +181,7 @@ const Navigator = () => {
             />
           ),
         }}
-      />
+      /> */}
     </Tab.Navigator>
   );
 };

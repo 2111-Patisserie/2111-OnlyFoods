@@ -19,6 +19,7 @@ import Navigator from "./Navigation/Navigator";
 import ProfileScreen from "./Screens/ProfileAllPost/ProfileScreen";
 import SinglePostScreen from "./Screens/SinglePost/SinglePostScreen";
 import HomeScreen from "./Screens/HomeFeed/HomeScreen";
+import EditScreen from "./Screens/EditProfile/EditScreen";
 // import EditProfileScreen from "./Screens/EditProfile/EditProfileScreen";
 
 const Stack = createNativeStackNavigator();
@@ -45,7 +46,6 @@ function App() {
             // name="BottomTabs"
             // component={BottomTabs}
           />
-
           <Stack.Screen
             options={{ headerShown: false }}
             name="SinglePost"
@@ -53,6 +53,11 @@ function App() {
             // options={{ headerShown: false }}
             // name="Setting"
             // component={EditProfileScreen}
+          />
+          <Stack.Screen
+            options={{ headerShown: false }}
+            name="Setting"
+            component={EditScreen}
           />
         </Stack.Navigator>
       </NavigationContainer>
